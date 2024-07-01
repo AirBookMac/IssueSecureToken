@@ -1,2 +1,3 @@
-# IssueSecureToken
-Uses swiftDialog to issue a secure token which is needed to activate FileVault
+# Issue Secure Token
+
+This scripts creates a secure token to enable FileVault. The script uses swiftDialog to present the dialog to the user: [https://github.com/bartreardon/swiftDialog](https://github.com/bartreardon/swiftDialog)
