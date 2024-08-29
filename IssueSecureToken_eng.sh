@@ -41,6 +41,29 @@ CurrentUser=$(stat -f%Su /dev/console)
 
 loggedInUser=$(dscl . -read /Users/"$CurrentUser" RealName | tail -1 | cut -c 2-)
 
+# Validate swiftDialog is installed
+if [ ! -e "/Library/Application Support/Dialog/Dialog.app" ]; then
+	echo "Dialog not found, installing..."
+	dialogURL=$(curl --silent --fail "https://api.github.com/repos/swiftDialog/swiftDialog/releases/latest" | awk -F '"' "/browser_download_url/ && /pkg\"/ { print \$4; exit }")
+	expectedDialogTeamID="PWA5E9TQ59"
+	# Create a temp directory
+	workDir=$(/usr/bin/basename "$0")
+	tempDir=$(/usr/bin/mktemp -d "/private/tmp/$workDir.XXXXXX")
+	# Download latest version of swiftDialog
+	/usr/bin/curl --location --silent "$dialogURL" -o "$tempDir/Dialog.pkg"
+	# Verify download
+	teamID=$(/usr/sbin/spctl -a -vv -t install "$tempDir/Dialog.pkg" 2>&1 | awk '/origin=/ {print $NF }' | tr -d '()')
+	if [ "$expectedDialogTeamID" = "$teamID" ] || [ "$expectedDialogTeamID" = "" ]; then
+		/usr/sbin/installer -pkg "$tempDir/Dialog.pkg" -target /
+	else
+		echo "Team ID verification failed, could not continue..."
+		exit 6
+	fi
+	/bin/rm -Rf "$tempDir"
+else
+	echo "Dialog v$(dialog --version) installed, continuing..."
+fi
+
 # Messages shown to the user in the dialog when prompting for password
 message="## Secure Token\n\nYour secure token has not been issued yet.
 This token is used to enable FileVault.\n\n
